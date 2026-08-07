@@ -1,8 +1,8 @@
 import numpy as np
 def W(n):
-    return np.exp(j*np.tau/n)
-def dft(x):
-
+    return np.exp(j*2*np.pi/n)
+def add_zeros(x):
+    return x.extend([0]*(len(x)-2**len(x).bit_length()))
 
 def dft_helper(x, y):
     if len(x) == 1:
