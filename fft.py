@@ -1,3 +1,4 @@
+"""
 import numpy as np
 def W(n):
     return np.exp(j*2*np.pi/n)
@@ -17,3 +18,27 @@ def dft_helper(x, y):
         W(len(x)//2)**(-k)*dft_helper(x_2)[k%(n//2)] \
             for k in range(n)]
     #return merge(dft(x[::2]) , dft(x[1::2])
+"""
+
+def fft(a):
+    # if a is not a power of 2 append zeros until it is
+    # n = length(a)
+
+    # base cases
+    # if n == 2 skip the recursive calls and go straight to the butterfly thing
+    # return a if n == 1
+    # return 0 if every item in a is 0
+
+    # make an array of all the even-indexed items in a
+    # make an array of all the odd-indexed items in a
+    
+    # assign a variable the result of the recursive call with the even array
+        # e.g. result_even = fft(a_even)
+    # assign a variable the result of the recursive call with the odd array
+# this is binary tree recursion thing
+    # precompute array of size n
+    # do butterfly thingamabob all the legit calculations
+    # do it for conjugate too
+    # insert into array
+    # do it for every k
+    # return final array
