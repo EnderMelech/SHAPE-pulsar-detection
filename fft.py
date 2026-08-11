@@ -1,43 +1,30 @@
-"""
 import numpy as np
-def W(n):
-    return np.exp(1j*2*np.pi/n)
-def add_zeros(x):
-    return x.extend([0]*(len(x)-2**len(x).bit_length()))
+def fft_butterfly(data):
+    n = len(data)
 
-def dft(x):
-    if len(x) == 1:
-        return x
-    if set(x) == {0}:
-        return x
-    n = len(x)
-    x_1 = x[::2]
-    x_2 = x[1::2]
+    if n == 2:
+        return [data[0] + data[1], data[0] - data[1]]
 
-    return [dft(x_1)[k%(n//2)]  + \
-        W(len(x)//2)**(-k)*dft(x_2)[k%(n//2)] \
-            for k in range(n)]
-"""
+    data_evens = data[::2]
+    data_odds = data[1::2]
+
+    result_even = fft(data_evens)
+    result_odd = fft(data_odds)
+
+    result = [0] * n
+
+    for k in range(n // 2):
+        w = np.exp(-2 * np.pi * 1j * k / n)
+        t = w * result_odd[k]
+        result[k] = result_even[k] + t
+        result[k + n // 2] = result_even[k] - t
+    return result
 
 def fft(a):
-    # if a is not a power of 2 append zeros until it is
-    # n = length(a)
+    data = og_data.copy()
+    if 
 
-    # base cases
-    # if n == 2 skip the recursive calls and go straight to the butterfly thing
-    # return a if n == 1
-    # return 0 if every item in a is 0
 
-    # make an array of all the even-indexed items in a
-    # make an array of all the odd-indexed items in a
-    
-    # assign a variable the result of the recursive call with the even array
-        # e.g. result_even = fft(a_even)
-    # assign a variable the result of the recursive call with the odd array
-# this is binary tree recursion thing
-    # precompute array of size n
-    # do butterfly thingamabob all the legit calculations
-    # do it for conjugate too
-    # insert into array
-    # do it for every k
-    # return final array
+data = [float(x) for x in input("Enter numbers separated by spaces: ").split()]
+fft(data)
+# print([round(float(x), 5) for x in np.abs(fft(data))])

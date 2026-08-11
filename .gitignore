@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Manim output directory
+media/
+
 # C extensions
 *.so
 
