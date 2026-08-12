@@ -3,9 +3,12 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+
+*.sf
 # Manim output directory
 media/
 *.npz
+
 # C extensions
 *.so
 
@@ -264,3 +267,4 @@ Thumbs.db
 *.tmp
 *.temp
 scratch/
+fake_pulsar.sf
