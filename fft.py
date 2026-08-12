@@ -28,10 +28,15 @@ def fft_butterfly(data, twiddle_cache):
     return np.concatenate([upper, lower])
 
 if __name__ == "__main__":
-    a = input("here")
-    if a != 'd':
-        a = [float(i) for i in a.split()]
-        x = np.array(a, dtype=np.complex128)
-    else:
-        x = np.arange(8, dtype=np.complex128)
-    print(fft(x))
+    try:
+        from pulsar_code import get_best_time_series
+    except ImportError:
+        raise ImportError(
+            "Cannot import get_best_time_series from pulsar_code. "
+            "Make sure pulsar_code.py is in the same folder."
+        )
+
+    best_ts, _, _, _ = get_best_time_series()
+    best_ts = np.asarray(best_ts, dtype=np.complex128)
+    fft_result = fft(best_ts)
+    print(fft_result)

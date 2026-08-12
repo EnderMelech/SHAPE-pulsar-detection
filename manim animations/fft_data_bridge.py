@@ -74,10 +74,20 @@ def prepare_fft_visualization_data(
     """
     signal = np.asarray(signal, dtype=np.complex128)
     n = len(signal)
-    assert n > 0 and (n & (n - 1)) == 0, (
-        f"Signal length must be a power of 2 for radix-2 FFT, got {n}. "
-        "Zero-pad your data up to the next power of 2 first."
-    )
+    if n == 0:
+        raise ValueError("Signal must not be empty.")
+
+    # Your FFT implementation is radix-2, so leave the data in a valid length
+    # for FFT analysis by zero-padding to the next power of two when needed.
+    if n & (n - 1):
+        original_n = n
+        padded_n = 1 << (n - 1).bit_length()
+        signal = np.pad(signal, (0, padded_n - n), mode="constant")
+        n = len(signal)
+        print(
+            f"Padded signal from {original_n} to {n} samples to match "
+            "radix-2 FFT requirements."
+        )
 
     spectrum = fft_func(signal)
     assert spectrum.shape == signal.shape, "FFT output shape mismatch"
@@ -157,25 +167,40 @@ def prepare_fft_visualization_data(
     return output_path
 
 
+def load_real_pulsar_signal(file_path: str = "fake_pulsar.sf", chunk_length: int = 524288):
+    """Use the actual pulsar processing pipeline and return a complex signal plus sample rate."""
+    try:
+        from pulsar_code import get_best_time_series
+    except ImportError as exc:
+        raise RuntimeError(
+            "Could not import pulsar_code.get_best_time_series(). "
+            "Make sure the repo root is on Python's import path when running this script."
+        ) from exc
+
+    best_ts, _, tbin, _ = get_best_time_series(file=file_path, chunk_length=chunk_length)
+    signal = np.asarray(best_ts, dtype=np.complex128)
+    sample_rate = 1.0 / float(tbin)
+    return signal, sample_rate
+
+
 if __name__ == "__main__":
-    # --- Example / placeholder. Swap in your real signal + fft_func. ---
-    N = 128            # number of samples (must be power of 2)
-    sample_rate = 64.0  # Hz
-    t = np.linspace(0, (N - 1) / sample_rate, N)
-    F1, F2 = 5.0, 12.0   # keep both under Nyquist (sample_rate / 2)
-
-    ADD_NOISE = False   # flip to True for a less "clean" looking signal
-    noise = np.random.normal(0, 0.05, N) if ADD_NOISE else 0.0
-
-    # Toy superposed signal: replace with your actual radio data.
-    signal = (
-        np.sin(2 * np.pi * F1 * t) + 0.6 * np.sin(2 * np.pi * F2 * t) + noise
-    ).astype(np.complex128)
+    try:
+        signal, sample_rate = load_real_pulsar_signal()
+        print("Using real pulsar signal from pulsar_code.py")
+    except Exception as exc:
+        print(f"Falling back to synthetic test signal: {exc}")
+        N = 128
+        sample_rate = 64.0
+        t = np.linspace(0, (N - 1) / sample_rate, N)
+        F1, F2 = 5.0, 12.0
+        signal = (
+            np.sin(2 * np.pi * F1 * t) + 0.6 * np.sin(2 * np.pi * F2 * t)
+        ).astype(np.complex128)
 
     prepare_fft_visualization_data(
         signal=signal,
         sample_rate=sample_rate,
         fft_func=fft_func,
-        n_components=2,
+        n_components=6,
         output_path="fft_viz_data.npz",
     )
