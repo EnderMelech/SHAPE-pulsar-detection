@@ -1,30 +1,37 @@
 import numpy as np
-def fft_butterfly(data):
-    n = len(data)
 
+
+def fft(data):
+    n = data.shape[0]
+    if n <= 1:
+        return data
+
+    twiddle_cache = {
+        size: np.exp(-2j * np.pi * np.arange(size // 2) / size)
+        for size in (2 ** k for k in range(2, int(np.log2(n)) + 1))
+    }
+
+    return fft_butterfly(data, twiddle_cache)
+
+
+def fft_butterfly(data, twiddle_cache):
+    n = data.shape[0]
     if n == 2:
-        return [data[0] + data[1], data[0] - data[1]]
+        return np.array([data[0] + data[1], data[0] - data[1]], dtype=np.complex128)
 
-    data_evens = data[::2]
-    data_odds = data[1::2]
+    evens = fft_butterfly(data[::2], twiddle_cache)
+    odds = fft_butterfly(data[1::2], twiddle_cache)
 
-    result_even = fft(data_evens)
-    result_odd = fft(data_odds)
+    twiddles = twiddle_cache[n]
+    upper = evens + twiddles * odds
+    lower = evens - twiddles * odds
+    return np.concatenate([upper, lower])
 
-    result = [0] * n
-
-    for k in range(n // 2):
-        w = np.exp(-2 * np.pi * 1j * k / n)
-        t = w * result_odd[k]
-        result[k] = result_even[k] + t
-        result[k + n // 2] = result_even[k] - t
-    return result
-
-def fft(a):
-    data = og_data.copy()
-    if 
-
-
-data = [float(x) for x in input("Enter numbers separated by spaces: ").split()]
-fft(data)
-# print([round(float(x), 5) for x in np.abs(fft(data))])
+if __name__ == "__main__":
+    a = input("here")
+    if a != 'd':
+        a = [float(i) for i in a.split()]
+        x = np.array(a, dtype=np.complex128)
+    else:
+        x = np.arange(8, dtype=np.complex128)
+    print(fft(x))
