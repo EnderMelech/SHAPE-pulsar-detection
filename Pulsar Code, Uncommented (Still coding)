@@ -1,0 +1,162 @@
+import numpy as np
+import matplotlib.pyplot as plt
+https://github.com/EnderMelech/SHAPE-pulsar-detection/tree/main
+from astropy.io import fits
+
+def myFFT(points):
+    points = np.asanyarray(points, dtype = complex)
+    if (len(points) // 2) == 0:
+        return points
+    even = myFFT(points[::2])
+    odd = myFFT(points[1::2])
+    X = np.zeros(len(points), dtype = complex)
+
+    for i in range(len(points) // 2):
+        w = np.exp(-2j*np.pi*(i/len(points)))
+        X[i] = even[i] + w*odd[i]
+        X[i + len(points) // 2] = even[i] - w*odd[i]
+    return X
+def myFFT_Freq(coefficents, tbin):
+    freq = []
+    for i in range(len(coefficents)):
+        freq.append(i/(len(coefficents)*tbin))
+    return np.array(freq)
+
+
+
+file = "s120408_215426.sf"
+
+hdul = fits.open(file, ignore_missing_simple=True)
+subint = hdul["SUBINT"]
+
+raw = subint.data["DATA"]
+
+nsblk = subint.header["NSBLK"]
+npol  = subint.header["NPOL"]
+nchan = subint.header["NCHAN"]
+tbin  = subint.header["TBIN"]
+freqs = subint.data["DAT_FREQ"][0]
+
+print(raw, nsblk, npol, nchan, tbin, freqs)
+
+packed = raw.astype(np.uint8)
+high = packed >> 4
+low  = packed & 0x0F
+unpacked = np.empty((raw.shape[0], raw.shape[1] * 2), dtype=np.uint8)
+print(unpacked)
+unpacked[:, 0::2] = high
+print(unpacked)
+unpacked[:, 1::2] = low
+print(unpacked.shape)
+
+data = unpacked.reshape(raw.shape[0], nsblk, npol, nchan)
+dynamic_spectrum = data[:, :, 0, :].reshape(-1, nchan)
+
+chunk = dynamic_spectrum[:524288].astype(float)
+channel_median = np.median(chunk, axis = 0)
+centered = chunk - channel_median
+channel_mad = np.median(np.abs(centered), axis=0)
+channel_mad[channel_mad == 0] = 1
+normalized = centered / channel_mad
+zero_dm_signal = np.median(normalized, axis=1, keepdims=True)
+normalized = normalized - zero_dm_signal
+
+DM_INT = []
+BEST_DM = 0
+BEST_SNR = -np.inf
+BEST_Time_Series = []
+BEST_DESPERSION = []
+f_ref = np.max(freqs)
+DM_values = np.arange(12.4, 12.6, 0.1)
+for i in range(len(DM_values)):
+    delays = 4.148808e3 * DM_values[i] * ((1 / freqs**2) - (1 / f_ref**2))
+    sample_shifts = np.rint(delays / tbin).astype(int)
+    dedispersed = np.zeros_like(normalized)
+    for f in range(nchan):
+        dedispersed[:, f] = np.roll(normalized[:, f], -sample_shifts[f])
+    time_series = np.sum(dedispersed,axis=1)
+    time_series_mad = np.median(np.abs((time_series)-np.median(time_series)))
+    if time_series_mad == 0:
+        time_series_mad = 1 
+    SNR = (np.max(time_series)-np.median(time_series))/time_series_mad
+    if SNR > BEST_SNR:
+        BEST_DM = DM_values[i]
+        BEST_SNR = SNR
+        BEST_Time_Series = time_series
+        BEST_DESPERSION = dedispersed
+    print(BEST_DM, DM_values[i], SNR)
+
+signal = BEST_Time_Series - np.mean(BEST_Time_Series)
+
+window = 2000
+baseline = np.convolve(
+    signal,
+    np.ones(window) / window,
+    mode="same"
+)
+
+signal = signal - baseline
+
+FFT = myFFT(signal)
+freq_FFT = myFFT_Freq(FFT, tbin)
+power = np.abs(FFT)**2
+mask = (freq_FFT >= 0.5) & (freq_FFT <= 10)
+freq_FFT = freq_FFT[mask]
+power = power[mask]
+
+peaks = []
+for i in range(1, len(power) - 1):
+    if power[i-1] < power[i] and power[i+1] < power[i]:
+        peaks.append(i)
+peaks = np.array(peaks)
+power_peaks = power[peaks]
+power_peaks = np.argsort(power_peaks)[::-1]
+strongest_peak = peaks[power_peaks[:20]]
+for i in strongest_peak:
+    freq = freq_FFT[i]
+    power_num = power[i]
+    period = 1/freq
+    print(f"freq = {freq}, power = {power_num}, period = {period}")
+
+strong_freqs = np.sort(freq_FFT[strongest_peak])
+differences = np.diff(strong_freqs)
+print(differences)
+
+
+plotdata= chunk[2750:, :]
+plt.figure(figsize=(12, 5))
+plt.imshow(plotdata.T, aspect = "auto", origin = "lower", cmap = "hot")
+plt.title("Dynamic Spectrum Uncleaned")
+plt.xlabel("Time")
+plt.ylabel("Freq Channel")
+plt.colorbar(label = "Intensity")
+plt.show()
+
+plotdata2= normalized[2750:, :]
+plt.figure(figsize=(10, 5))
+plt.imshow(plotdata2.T, aspect = "auto", origin = "lower", cmap = "hot")
+plt.title("Dynamic Spectrum Normalized")
+plt.xlabel("Time")
+plt.ylabel("Freq Channel")
+plt.colorbar(label = "Intensity")
+plt.show()
+
+plotdata3= BEST_DESPERSION[2750:, :]
+print(type(BEST_Time_Series))
+plt.figure(figsize=(10, 5))
+plt.imshow(plotdata3.T, aspect = "auto", origin = "lower", cmap = "hot")
+plt.title("Dynamic Spectrum Normalized")
+plt.xlabel("Time")
+plt.ylabel("Freq Channel")
+plt.colorbar(label = "Intensity")
+plt.show()
+
+plt.plot(BEST_Time_Series)
+plt.show()
+
+plt.plot(freq_FFT, power)
+plt.xlim(0.5, 10)
+plt.show()
+
+
+
