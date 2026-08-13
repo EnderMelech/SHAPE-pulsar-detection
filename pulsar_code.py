@@ -550,7 +550,8 @@ def get_best_time_series(
         ps.print_stats(20)
         print(s.getvalue())
 
-    return fft_ready_series, n_real, best_dedispersion, tbin, freqs, best_dm
+    filename = file[:-3]
+    return fft_ready_series, n_real, best_dedispersion, tbin, freqs, best_dm, filename
 
 
 def benchmark_get_best_time_series(file="s120408_215426.sf", dm_values=None, trials=3, chunk_length=65536):
@@ -604,7 +605,7 @@ def _reference_best_time_series_small(normalized, freqs, tbin, dm_values, max_sa
 
 
 if __name__ == "__main__":
-    best_ts, n_real, best_dedispersion, tbin, freqs, best_dm = get_best_time_series()
+    best_ts, n_real, best_dedispersion, tbin, freqs, best_dm, filename = get_best_time_series()
     print("Best DM:", best_dm)
     print("FFT-ready time series length:", len(best_ts))
     print("Real (unpadded, post-trim) samples:", n_real)

@@ -268,3 +268,5 @@ Thumbs.db
 *.temp
 scratch/
 fake_pulsar.sf
+
+*.pkl

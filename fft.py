@@ -1,6 +1,8 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+import pickle
+
 plt.ioff()
 
 def fft(data):
@@ -31,21 +33,32 @@ def fft_butterfly(data, twiddle_cache):
 
 if __name__ == "__main__":
     try:
-        from pulsar_code import get_best_time_series
-        print("imported pulsar_code.py")
-    except ImportError:
-        raise ImportError(
-            "Cannot import get_best_time_series from pulsar_code. "
-            "Make sure pulsar_code.py is in the same folder."
-        )
+        with open(f"s120408_215426_gbts.pkl", "rb") as f:
+            fft_ready_series, n_real, best_dedispersion, tbin, freqs, best_dm, filename = pickle.load(f)
+        print("loaded gbts data") # gbts means get_best_time_series()
+    except FileNotFoundError:
+        print("gbts data not found")
+        try:
+            from pulsar_code import get_best_time_series
+            print("imported pulsar_code.py")
+        except ImportError:
+            raise ImportError(
+                "Cannot import get_best_time_series from pulsar_code. "
+                "Make sure pulsar_code.py is in the same folder."
+            )
 
-    print("get_best_time_series called")
-    start_time = time.perf_counter()
-    fft_ready_series, n_real, best_dedispersion, tbin, freqs, best_dm = get_best_time_series(timing=False)
-    end_time = time.perf_counter()
-    print(f"get_best_time_series finished in {end_time - start_time:.6f} seconds")
+        print("get_best_time_series called")
+        start_time = time.perf_counter()
+        gbts = fft_ready_series, n_real, best_dedispersion, tbin, freqs, best_dm, filename = get_best_time_series(timing=False)
+        end_time = time.perf_counter()
+        print(f"get_best_time_series finished in {end_time - start_time:.6f} seconds")
+
+        with open(f"{filename}_gbts.pkl", "wb") as f:
+            pickle.dump(gbts, f)
+
     best_ts = fft_ready_series  # the FFT-ready (padded/tapered) time series
     print("received FFT-ready time series from get_best_time_series")
+
     # Prepare pre-FFT plotting data but don't display yet; show at end.
     try:
         pre_ts = best_ts.real if np.iscomplexobj(best_ts) else np.asarray(best_ts, dtype=float)
