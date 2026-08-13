@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-https://github.com/EnderMelech/SHAPE-pulsar-detection/tree/main
+# https://github.com/EnderMelech/SHAPE-pulsar-detection/tree/main
 from astropy.io import fits
 
 def myFFT(points):
