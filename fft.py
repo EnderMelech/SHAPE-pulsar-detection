@@ -84,7 +84,7 @@ if __name__ == "__main__":
         freqs_fft_masked = freqs_fft[mask]
         power_masked = power[mask]
         max_freq = float(np.max(freqs_fft_masked)) if freqs_fft_masked.size else 1.0
-        freq_cap = min(max_freq, 25.0)
+        freq_cap = min(max_freq, 10.0)
     except Exception:
         freqs_fft_masked = None
         power_masked = None
@@ -128,7 +128,7 @@ if __name__ == "__main__":
             ax2.set_xlim(0, freq_cap)
             # mark ticks every 5 Hz
             try:
-                ticks = np.arange(0.0, freq_cap + 0.001, 5.0)
+                ticks = np.arange(0.0, freq_cap + 0.001, 1.0)
                 ax2.set_xticks(ticks)
             except Exception:
                 pass
